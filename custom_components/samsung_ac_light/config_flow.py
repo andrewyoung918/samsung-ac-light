@@ -28,12 +28,13 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class SamsungACLightOAuth2FlowHandler(
+class SamsungACLightConfigFlow(
     config_entry_oauth2_flow.AbstractOAuth2FlowHandler, domain=DOMAIN
 ):
     """Handle Samsung AC Light Control OAuth2 config flow."""
 
     DOMAIN = DOMAIN
+    VERSION = 1
 
     @property
     def logger(self) -> logging.Logger:
@@ -46,6 +47,26 @@ class SamsungACLightOAuth2FlowHandler(
         return {
             "scope": "r:devices:* w:devices:* x:devices:*",
         }
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Handle the initial step."""
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
+
+        # Import client credentials if not already done
+        if DOMAIN not in self.hass.data.get("application_credentials", {}):
+            await async_import_client_credential(
+                self.hass,
+                DOMAIN,
+                ClientCredential(
+                    DEFAULT_OAUTH2_CLIENT_ID,
+                    DEFAULT_OAUTH2_CLIENT_SECRET,
+                ),
+            )
+
+        return await self.async_step_pick_implementation()
 
     async def async_step_import(self, data: dict[str, Any]) -> FlowResult:
         """Handle import from configuration.yaml."""
@@ -86,33 +107,3 @@ class SamsungACLightOAuth2FlowHandler(
                 CONF_LOCATION_ID: location_id,
             },
         )
-
-
-class SamsungACLightConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Samsung AC Light Control."""
-
-    VERSION = 1
-
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Handle the initial step."""
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
-
-        # Import client credentials if not already done
-        if DOMAIN not in self.hass.data.get("application_credentials", {}):
-            await async_import_client_credential(
-                self.hass,
-                DOMAIN,
-                ClientCredential(
-                    DEFAULT_OAUTH2_CLIENT_ID,
-                    DEFAULT_OAUTH2_CLIENT_SECRET,
-                ),
-            )
-
-        return await self.async_step_pick_implementation()
-
-    async_step_pick_implementation = (
-        config_entry_oauth2_flow.async_step_pick_implementation
-    )
