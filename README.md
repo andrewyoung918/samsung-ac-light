@@ -24,7 +24,7 @@ A custom Home Assistant integration that allows you to control the display light
 1. Open HACS in your Home Assistant instance
 2. Click on the three dots menu in the top right
 3. Select "Custom repositories"
-4. Add this repository URL: `https://github.com/andrewyoung/samsung-ac-light`
+4. Add this repository URL: `https://github.com/andrewyoung918/samsung-ac-light`
 5. Select "Integration" as the category
 6. Click "Add"
 7. Search for "Samsung AC Light Control" in HACS
@@ -152,4 +152,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Support
 
-For issues and feature requests, please use the [GitHub issue tracker](https://github.com/andrewyoung/samsung-ac-light/issues).
+For issues and feature requests, please use the [GitHub issue tracker](https://github.com/andrewyoung918/samsung-ac-light/issues).
