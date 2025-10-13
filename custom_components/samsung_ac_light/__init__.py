@@ -58,7 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         # Verify connection and get devices
-        devices = await client.devices(location_id=location_id)
+        devices = await client.devices(location_ids=[location_id])
         _LOGGER.info(f"Found {len(devices)} devices in location {location_id}")
 
         # Filter to only AC devices
