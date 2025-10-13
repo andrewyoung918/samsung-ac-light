@@ -67,9 +67,9 @@ class SamsungACDisplayLight(LightEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, device.device_id)},
             name=device.label or device.name,
-            manufacturer=device.device_manufacturer or "Samsung",
-            model=device.device_model or "AC Unit",
-            sw_version=device.ocf_firmware_version,
+            manufacturer=getattr(device, "manufacturer_name", "Samsung"),
+            model=getattr(device, "model", "AC Unit"),
+            sw_version=getattr(device, "firmware_version", None),
         )
 
         # Initialize state
