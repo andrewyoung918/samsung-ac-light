@@ -6,7 +6,7 @@ A custom Home Assistant integration that allows you to control the display light
 
 - Control Samsung AC display lights through Home Assistant
 - Turn display lights on/off for automations and dashboards
-- OAuth2 authentication with SmartThings
+- Simple Personal Access Token authentication
 - Automatic device discovery for all AC units in your SmartThings account
 - HACS compatible for easy installation
 
@@ -15,7 +15,7 @@ A custom Home Assistant integration that allows you to control the display light
 1. Samsung AC units connected to SmartThings
 2. SmartThings account with AC devices configured
 3. Home Assistant instance with HACS installed
-4. SmartThings Developer Account for OAuth credentials
+4. SmartThings Personal Access Token
 
 ## Installation
 
@@ -39,23 +39,24 @@ A custom Home Assistant integration that allows you to control the display light
 
 ## Configuration
 
-### Setting up SmartThings OAuth Application
+### Step 1: Get a SmartThings Personal Access Token
 
-1. Go to [SmartThings Developer Workspace](https://smartthings.developer.samsung.com/workspace)
-2. Create a new project or select an existing one
-3. Create a new OAuth2 app with these settings:
-   - App Name: Samsung AC Light Control
-   - Redirect URIs: `https://YOUR_HOME_ASSISTANT_URL/auth/external/callback`
-   - Scopes: Select device read, write, and execute permissions
-4. Note down your Client ID and Client Secret
+1. Go to [SmartThings Personal Access Token Portal](https://account.smartthings.com/tokens)
+2. Click **"Generate new token"**
+3. Enter a token name (e.g., "Home Assistant AC Light")
+4. Select the following permissions:
+   - **Devices**: Check all boxes (List, Read, Execute, Write)
+5. Click **"Generate token"**
+6. **Important**: Copy the token immediately - you won't be able to see it again!
 
-### Adding the Integration
+### Step 2: Add the Integration to Home Assistant
 
-1. In Home Assistant, go to Settings → Devices & Services
-2. Click "Add Integration"
-3. Search for "Samsung AC Light Control"
-4. Follow the OAuth flow to authenticate with SmartThings
-5. Your AC units will be automatically discovered
+1. In Home Assistant, go to **Settings → Devices & Services**
+2. Click **"Add Integration"**
+3. Search for **"Samsung AC Light Control"**
+4. Paste your Personal Access Token from Step 1
+5. Click **"Submit"**
+6. Your AC units will be automatically discovered
 
 ## Usage
 
@@ -89,20 +90,24 @@ This integration works with Samsung AC units that:
 
 ## Troubleshooting
 
+### Authentication fails
+- Verify you copied the complete Personal Access Token
+- Ensure the token has the correct permissions (Devices: List, Read, Execute, Write)
+- Check that your SmartThings account has at least one location configured
+
 ### No devices found
 - Ensure your AC units are properly connected to SmartThings
-- Check that your OAuth app has the correct permissions
 - Verify the AC units appear in the SmartThings mobile app
+- Check that your token has device permissions enabled
 
 ### Display light not responding
 - Check the integration logs for error messages
 - Ensure the AC unit supports display light control
 - Try refreshing the device status in SmartThings app
 
-### OAuth authentication fails
-- Verify your redirect URI matches exactly (including https://)
-- Ensure your Home Assistant instance is accessible via HTTPS
-- Check that Client ID and Secret are correct
+### Need to regenerate token
+- If your token expires or is lost, generate a new one at [SmartThings Token Portal](https://account.smartthings.com/tokens)
+- Remove and re-add the integration in Home Assistant with the new token
 
 ## Development
 
@@ -116,8 +121,7 @@ samsung-ac-light/
 │       ├── const.py
 │       ├── light.py
 │       ├── manifest.json
-│       ├── strings.json
-│       └── application_credentials.py
+│       └── strings.json
 ├── hacs.json
 └── README.md
 ```
