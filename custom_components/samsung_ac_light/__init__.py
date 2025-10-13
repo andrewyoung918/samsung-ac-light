@@ -12,7 +12,7 @@ from pysmartthings import SmartThings
 from pysmartthings.device import Device
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_TOKEN, Platform
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import aiohttp_client, device_registry as dr
@@ -44,7 +44,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Samsung AC Light Control from a config entry."""
-    token = entry.data.get(CONF_TOKEN, {}).get("access_token")
+    from homeassistant.const import CONF_ACCESS_TOKEN
+
+    token = entry.data.get(CONF_ACCESS_TOKEN)
     if not token:
         _LOGGER.error("No access token found in config entry")
         return False

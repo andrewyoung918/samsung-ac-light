@@ -3,7 +3,7 @@
   "name": "Samsung AC Light Control",
   "codeowners": ["@andrewyoung"],
   "config_flow": true,
-  "dependencies": ["application_credentials"],
+  "dependencies": [],
   "documentation": "https://github.com/andrewyoung/samsung-ac-light",
   "homekit": {},
   "iot_class": "cloud_push",
