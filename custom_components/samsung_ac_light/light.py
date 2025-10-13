@@ -72,43 +72,35 @@ class SamsungACDisplayLight(LightEntity):
             sw_version=getattr(device, "firmware_version", None),
         )
 
-        # Initialize state
-        self._attr_is_on = False
+        # Initialize state - assume display is on by default
+        self._attr_is_on = True
         self._update_state_from_device()
 
     @callback
     def _update_state_from_device(self) -> None:
         """Update entity state from device status."""
-        # Check for display light control in custom.disabledComponents
-        if "custom.disabledComponents" in self._device.status.attributes:
-            disabled = self._device.status.attributes.get("custom.disabledComponents", {})
-            components = disabled.get("disabledComponents", {}).get("value", [])
-            # If "display" is in disabled components, the light is off
-            self._attr_is_on = "display" not in components
-            _LOGGER.debug(
-                f"Display light for {self._device.device_id}: "
-                f"{'ON' if self._attr_is_on else 'OFF'} "
-                f"(disabled components: {components})"
-            )
-        else:
-            # Fallback: Check if the device has any display-related capability
-            # This might need adjustment based on your specific AC model
-            _LOGGER.debug(
-                f"No custom.disabledComponents found for {self._device.device_id}, "
-                f"checking other capabilities"
-            )
+        # Samsung AC display light state is not directly readable via status
+        # We maintain the state based on commands sent
+        # Default to assuming the light is on unless we've turned it off
+        _LOGGER.debug(
+            f"Display light for {self._device.device_id}: "
+            f"{'ON' if self._attr_is_on else 'OFF'}"
+        )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the display light."""
         _LOGGER.info(f"Turning on display light for {self._device.device_id}")
 
         try:
-            # Remove "display" from disabled components to turn on the light
+            # Note: "Light_Off" actually turns the display ON (inverted logic from Samsung)
             result = await self._device.command(
                 component_id="main",
-                capability="custom.disabledComponents",
-                command="setDisabledComponents",
-                args=[[]],  # Empty array means no components are disabled
+                capability="execute",
+                command="execute",
+                args=[
+                    "mode/vs/0",
+                    {"x.com.samsung.da.options": ["Light_Off"]}
+                ],
             )
 
             if result:
@@ -128,12 +120,15 @@ class SamsungACDisplayLight(LightEntity):
         _LOGGER.info(f"Turning off display light for {self._device.device_id}")
 
         try:
-            # Add "display" to disabled components to turn off the light
+            # Note: "Light_On" actually turns the display OFF (inverted logic from Samsung)
             result = await self._device.command(
                 component_id="main",
-                capability="custom.disabledComponents",
-                command="setDisabledComponents",
-                args=[["display"]],  # Disable the display component
+                capability="execute",
+                command="execute",
+                args=[
+                    "mode/vs/0",
+                    {"x.com.samsung.da.options": ["Light_On"]}
+                ],
             )
 
             if result:
