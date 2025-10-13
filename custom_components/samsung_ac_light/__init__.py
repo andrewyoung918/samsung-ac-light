@@ -99,10 +99,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             device_registry.async_get_or_create(
                 config_entry_id=entry.entry_id,
                 identifiers={(DOMAIN, device.device_id)},
-                manufacturer=device.device_manufacturer or "Samsung",
-                model=device.device_model or "AC Unit",
+                manufacturer=getattr(device, "manufacturer_name", "Samsung"),
+                model=getattr(device, "model", "AC Unit"),
                 name=device.label or device.name,
-                sw_version=device.ocf_firmware_version,
+                sw_version=getattr(device, "firmware_version", None),
             )
 
         # Set up platforms
