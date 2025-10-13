@@ -1,0 +1,5 @@
+{
+  "name": "Samsung AC Light Control",
+  "render_readme": true,
+  "homeassistant": "2024.1.0"
+}
