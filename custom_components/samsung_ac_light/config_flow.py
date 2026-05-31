@@ -45,11 +45,11 @@ class SamsungACLightConfigFlow(
         if not granted >= set(SCOPES):
             return self.async_abort(reason="missing_scopes")
 
-        session = async_get_clientsession(self.hass)
-        client = SmartThings(session, token_data[CONF_ACCESS_TOKEN])
+        client = SmartThings(session=async_get_clientsession(self.hass))
+        client.authenticate(token_data[CONF_ACCESS_TOKEN])
 
         try:
-            locations = await client.locations()
+            locations = await client.get_locations()
         except Exception:  # noqa: BLE001 - surface any auth/network error as a flow error
             _LOGGER.exception("Error fetching SmartThings locations")
             return self.async_abort(reason="cannot_connect")
