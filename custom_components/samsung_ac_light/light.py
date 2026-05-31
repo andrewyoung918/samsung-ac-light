@@ -5,16 +5,14 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from pysmartthings import Device
+from pysmartthings import Capability, Command, Device
 
 from homeassistant.components.light import (
-    ATTR_BRIGHTNESS,
     ColorMode,
     LightEntity,
-    LightEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -22,6 +20,13 @@ from . import SamsungACLightData
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+
+# Samsung's display-light control uses the raw "execute" capability against the
+# vendor data path. Note the inverted semantics: "Light_Off" turns the physical
+# display ON, and "Light_On" turns it OFF.
+EXECUTE_PATH = "mode/vs/0"
+DISPLAY_ON_ARGUMENT = [EXECUTE_PATH, {"x.com.samsung.da.options": ["Light_Off"]}]
+DISPLAY_OFF_ARGUMENT = [EXECUTE_PATH, {"x.com.samsung.da.options": ["Light_On"]}]
 
 
 async def async_setup_entry(
@@ -34,11 +39,11 @@ async def async_setup_entry(
 
     entities = []
     for device in data.devices:
-        # Create a light entity for each AC device
         entities.append(SamsungACDisplayLight(data, device, entry.entry_id))
         _LOGGER.info(
-            f"Creating light entity for AC: {device.label or device.name} "
-            f"(ID: {device.device_id})"
+            "Creating light entity for AC: %s (ID: %s)",
+            device.label or device.name,
+            device.device_id,
         )
 
     if entities:
@@ -54,6 +59,9 @@ class SamsungACDisplayLight(LightEntity):
     _attr_name = "Display Light"
     _attr_color_mode = ColorMode.ONOFF
     _attr_supported_color_modes = {ColorMode.ONOFF}
+    # The display-light state cannot be read back from SmartThings, so we track
+    # it locally based on the commands we send rather than polling.
+    _attr_should_poll = False
 
     def __init__(
         self, data: SamsungACLightData, device: Device, entry_id: str
@@ -63,99 +71,67 @@ class SamsungACDisplayLight(LightEntity):
         self._device = device
         self._entry_id = entry_id
 
-        # Set unique ID based on device ID
         self._attr_unique_id = f"{device.device_id}_display_light"
 
-        # Set device info for grouping
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, device.device_id)},
             name=device.label or device.name,
-            manufacturer=getattr(device, "manufacturer_name", "Samsung"),
-            model=getattr(device, "model", "AC Unit"),
-            sw_version=getattr(device, "firmware_version", None),
+            manufacturer="Samsung",
+            model="AC Unit",
         )
 
-        # Initialize state - assume display is on by default
+        # Assume the display is on until we turn it off.
         self._attr_is_on = True
-        self._update_state_from_device()
 
-    @callback
-    def _update_state_from_device(self) -> None:
-        """Update entity state from device status."""
-        # Samsung AC display light state is not directly readable via status
-        # We maintain the state based on commands sent
-        # Default to assuming the light is on unless we've turned it off
-        _LOGGER.debug(
-            f"Display light for {self._device.device_id}: "
-            f"{'ON' if self._attr_is_on else 'OFF'}"
-        )
+    @property
+    def _client(self):
+        """Return the shared SmartThings client."""
+        return self._data.client
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the display light."""
-        _LOGGER.info(f"Turning on display light for {self._device.device_id}")
-
+        _LOGGER.info("Turning on display light for %s", self._device.device_id)
         try:
-            # Make sure we have a fresh, valid OAuth access token.
-            await self._data.async_ensure_token_valid()
-            # Note: "Light_Off" actually turns the display ON (inverted logic from Samsung)
-            result = await self._device.command(
-                component_id="main",
-                capability="execute",
-                command="execute",
-                args=[
-                    "mode/vs/0",
-                    {"x.com.samsung.da.options": ["Light_Off"]}
-                ],
+            await self._client.execute_device_command(
+                self._device.device_id,
+                Capability.EXECUTE,
+                Command.EXECUTE,
+                argument=DISPLAY_ON_ARGUMENT,
             )
-
-            if result:
-                self._attr_is_on = True
-                self.async_write_ha_state()
-                _LOGGER.debug(f"Successfully turned on display light for {self._device.device_id}")
-            else:
-                _LOGGER.error(f"Failed to turn on display light for {self._device.device_id}")
-
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001 - surface any command failure
             _LOGGER.error(
-                f"Error turning on display light for {self._device.device_id}: {err}"
+                "Error turning on display light for %s: %s",
+                self._device.device_id,
+                err,
             )
+            return
+
+        self._attr_is_on = True
+        self.async_write_ha_state()
+        _LOGGER.debug(
+            "Successfully turned on display light for %s", self._device.device_id
+        )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the display light."""
-        _LOGGER.info(f"Turning off display light for {self._device.device_id}")
-
+        _LOGGER.info("Turning off display light for %s", self._device.device_id)
         try:
-            # Make sure we have a fresh, valid OAuth access token.
-            await self._data.async_ensure_token_valid()
-            # Note: "Light_On" actually turns the display OFF (inverted logic from Samsung)
-            result = await self._device.command(
-                component_id="main",
-                capability="execute",
-                command="execute",
-                args=[
-                    "mode/vs/0",
-                    {"x.com.samsung.da.options": ["Light_On"]}
-                ],
+            await self._client.execute_device_command(
+                self._device.device_id,
+                Capability.EXECUTE,
+                Command.EXECUTE,
+                argument=DISPLAY_OFF_ARGUMENT,
             )
-
-            if result:
-                self._attr_is_on = False
-                self.async_write_ha_state()
-                _LOGGER.debug(f"Successfully turned off display light for {self._device.device_id}")
-            else:
-                _LOGGER.error(f"Failed to turn off display light for {self._device.device_id}")
-
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001 - surface any command failure
             _LOGGER.error(
-                f"Error turning off display light for {self._device.device_id}: {err}"
+                "Error turning off display light for %s: %s",
+                self._device.device_id,
+                err,
             )
+            return
 
-    async def async_update(self) -> None:
-        """Update the entity."""
-        try:
-            await self._data.async_ensure_token_valid()
-            await self._device.status.refresh()
-            self._update_state_from_device()
-            _LOGGER.debug(f"Updated status for {self._device.device_id}")
-        except Exception as err:
-            _LOGGER.error(f"Error updating {self._device.device_id}: {err}")
+        self._attr_is_on = False
+        self.async_write_ha_state()
+        _LOGGER.debug(
+            "Successfully turned off display light for %s", self._device.device_id
+        )
