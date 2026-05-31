@@ -1,22 +1,36 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "Samsung AC Light Control",
-        "description": "Enter your SmartThings Personal Access Token. You can generate one at {token_url}",
-        "data": {
-          "access_token": "Personal Access Token"
-        }
+      "pick_implementation": {
+        "title": "[%key:common::config_flow::title::oauth2_pick_implementation%]"
+      },
+      "reauth_confirm": {
+        "title": "[%key:common::config_flow::title::reauth%]",
+        "description": "The Samsung AC Light Control integration needs to re-authenticate with SmartThings."
       }
-    },
-    "error": {
-      "invalid_auth": "Invalid token. Please check your Personal Access Token.",
-      "no_locations": "No SmartThings locations found. Please ensure you have at least one location set up in SmartThings."
     },
     "abort": {
       "already_configured": "This SmartThings location is already configured.",
-      "single_instance_allowed": "Only a single instance is allowed."
+      "single_instance_allowed": "Only a single instance is allowed.",
+      "missing_configuration": "[%key:common::config_flow::abort::oauth2_missing_configuration%]",
+      "authorize_url_timeout": "[%key:common::config_flow::abort::oauth2_authorize_url_timeout%]",
+      "no_url_available": "[%key:common::config_flow::abort::oauth2_no_url_available%]",
+      "oauth_error": "[%key:common::config_flow::abort::oauth2_error%]",
+      "oauth_timeout": "[%key:common::config_flow::abort::oauth2_timeout%]",
+      "oauth_unauthorized": "[%key:common::config_flow::abort::oauth2_unauthorized%]",
+      "oauth_failed": "[%key:common::config_flow::abort::oauth2_failed%]",
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]",
+      "missing_scopes": "Authentication failed. Please make sure you granted all the requested SmartThings permissions (devices and locations).",
+      "reauth_account_mismatch": "The authenticated SmartThings account does not match the one already configured.",
+      "no_locations": "No SmartThings locations found. Please ensure you have at least one location set up in SmartThings.",
+      "cannot_connect": "Could not connect to SmartThings. Please try again."
+    },
+    "create_entry": {
+      "default": "[%key:common::config_flow::create_entry::authenticated%]"
     }
+  },
+  "application_credentials": {
+    "description": "To control your Samsung AC display lights you need to create a SmartThings OAuth application and enter its **Client ID** and **Client Secret** here.\n\n1. Open the [SmartThings Developer Workspace]({developer_console_url}) (or use the SmartThings CLI) and create a new **OAuth-In SmartApp**.\n2. Grant the scopes `r:locations:*`, `r:devices:*` and `x:devices:*`.\n3. Set the redirect URI to `{redirect_url}`.\n4. Copy the generated Client ID and Client Secret into the fields below.\n\nSee the [setup instructions]({more_info_url}) for full details."
   },
   "entity": {
     "light": {
