@@ -35,7 +35,7 @@ async def async_setup_entry(
     entities = []
     for device in data.devices:
         # Create a light entity for each AC device
-        entities.append(SamsungACDisplayLight(device, entry.entry_id))
+        entities.append(SamsungACDisplayLight(data, device, entry.entry_id))
         _LOGGER.info(
             f"Creating light entity for AC: {device.label or device.name} "
             f"(ID: {device.device_id})"
@@ -55,8 +55,11 @@ class SamsungACDisplayLight(LightEntity):
     _attr_color_mode = ColorMode.ONOFF
     _attr_supported_color_modes = {ColorMode.ONOFF}
 
-    def __init__(self, device: Device, entry_id: str) -> None:
+    def __init__(
+        self, data: SamsungACLightData, device: Device, entry_id: str
+    ) -> None:
         """Initialize the light."""
+        self._data = data
         self._device = device
         self._entry_id = entry_id
 
@@ -92,6 +95,8 @@ class SamsungACDisplayLight(LightEntity):
         _LOGGER.info(f"Turning on display light for {self._device.device_id}")
 
         try:
+            # Make sure we have a fresh, valid OAuth access token.
+            await self._data.async_ensure_token_valid()
             # Note: "Light_Off" actually turns the display ON (inverted logic from Samsung)
             result = await self._device.command(
                 component_id="main",
@@ -120,6 +125,8 @@ class SamsungACDisplayLight(LightEntity):
         _LOGGER.info(f"Turning off display light for {self._device.device_id}")
 
         try:
+            # Make sure we have a fresh, valid OAuth access token.
+            await self._data.async_ensure_token_valid()
             # Note: "Light_On" actually turns the display OFF (inverted logic from Samsung)
             result = await self._device.command(
                 component_id="main",
@@ -146,6 +153,7 @@ class SamsungACDisplayLight(LightEntity):
     async def async_update(self) -> None:
         """Update the entity."""
         try:
+            await self._data.async_ensure_token_valid()
             await self._device.status.refresh()
             self._update_state_from_device()
             _LOGGER.debug(f"Updated status for {self._device.device_id}")

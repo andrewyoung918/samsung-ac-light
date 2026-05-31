@@ -3,13 +3,13 @@
   "name": "Samsung AC Light Control",
   "codeowners": ["@andrewyoung918"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["application_credentials"],
   "documentation": "https://github.com/andrewyoung918/samsung-ac-light",
   "homekit": {},
-  "iot_class": "cloud_push",
+  "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/andrewyoung918/samsung-ac-light/issues",
   "requirements": ["pysmartthings==0.7.8"],
   "ssdp": [],
-  "version": "1.0.0",
+  "version": "2.0.0",
   "zeroconf": []
 }
